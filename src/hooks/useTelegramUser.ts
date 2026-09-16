@@ -38,6 +38,7 @@ declare global {
 export function useTelegramUser() {
   const [initData, setInitData] = useState<string | null>(null);
   const [user, setUser] = useState<{ id: number; first_name: string; username?: string } | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -53,7 +54,8 @@ export function useTelegramUser() {
         });
       }
     }
+    setReady(true);
   }, []);
 
-  return { initData, user };
+  return { initData, user, ready };
 }

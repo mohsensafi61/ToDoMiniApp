@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { createBrowserClient } from "@/lib/supabase/client";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useTelegramUser } from "@/hooks/useTelegramUser";
 import type { Task } from "@/lib/types";
 
@@ -9,13 +8,11 @@ export function useTasks() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { initData } = useTelegramUser();
-
-  // Only create client in browser
-  const supabase = typeof window !== "undefined" ? createBrowserClient() : null;
+  const { initData, ready } = useTelegramUser();
+  const fetchedRef = useRef(false);
 
   const fetchTasks = useCallback(async () => {
-    if (!initData || !supabase) return;
+    if (!initData) return;
     setLoading(true);
     setError(null);
 
@@ -31,14 +28,21 @@ export function useTasks() {
     } finally {
       setLoading(false);
     }
-  }, [initData, supabase]);
+  }, [initData]);
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (ready && !fetchedRef.current) {
+      fetchedRef.current = true;
+      if (initData) {
+        fetchTasks();
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [ready, initData, fetchTasks]);
 
   const addTask = async (title: string) => {
-    if (!initData || !supabase) return;
+    if (!initData) return;
     const res = await fetch("/api/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-telegram-init-data": initData },
@@ -50,7 +54,7 @@ export function useTasks() {
   };
 
   const completeTask = async (id: string) => {
-    if (!initData || !supabase) return;
+    if (!initData) return;
     const res = await fetch(`/api/tasks/${id}`, {
       method: "PATCH",
       headers: { "x-telegram-init-data": initData },
@@ -61,7 +65,7 @@ export function useTasks() {
   };
 
   const removeTask = async (id: string) => {
-    if (!initData || !supabase) return;
+    if (!initData) return;
     const res = await fetch(`/api/tasks/${id}`, {
       method: "DELETE",
       headers: { "x-telegram-init-data": initData },
