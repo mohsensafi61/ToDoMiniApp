@@ -7,11 +7,13 @@ declare global {
     Telegram?: {
       WebApp?: {
         initDataRaw?: string;
-        user?: {
-          id: number;
-          first_name: string;
-          last_name?: string;
-          username?: string;
+        initDataUnsafe?: {
+          user?: {
+            id: number;
+            first_name: string;
+            last_name?: string;
+            username?: string;
+          };
         };
         expand: () => void;
         ready: () => void;
@@ -46,11 +48,13 @@ export function useTelegramUser() {
       tg.ready();
       tg.expand();
       if (tg.initDataRaw) setInitData(tg.initDataRaw);
-      if (tg.user) {
+      // User is in initDataUnsafe, not directly on WebApp
+      if (tg.initDataUnsafe?.user) {
+        const u = tg.initDataUnsafe.user;
         setUser({
-          id: tg.user.id,
-          first_name: tg.user.first_name,
-          username: tg.user.username,
+          id: u.id,
+          first_name: u.first_name,
+          username: u.username,
         });
       }
     }
